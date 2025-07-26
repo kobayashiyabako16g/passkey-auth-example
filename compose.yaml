@@ -1,0 +1,47 @@
+x-shared-env: &shared-env
+  KV_INIT_ADDRESS: ${KV_INIT_ADDRESS:-kv:6379}
+  KV_USERNAME: ${KV_USERNAME:-kv}
+  KV_PASSWORD: ${KV_PASSWORD:-kv}
+  KV_CLIENTNAME: ${KV_CLIENTNAME:-api}
+  KV_EXPIRATION: ${KV_EXPIRATION:-3600}
+  DB_PASSWORD: ${DB_PASSWORD:-postgres}
+  DB_NAME: ${DB_NAME:-app}
+
+services:
+  api:
+    build:
+      context: .
+      target: develop
+    working_dir: /go/src/app
+    command: ["go", "tool", "air"]
+    environment:
+      <<: *shared-env
+      APP_ENV: development
+    volumes:
+      - ./app:/go/src/app
+    ports:
+      - 8080:8080
+
+  kv:
+    image: valkey/valkey:8-alpine
+    ports:
+      - "6379:6379"
+    environment:
+      <<: *shared-env
+    volumes:
+      - ./docker/kv/valkey.conf:/usr/local/etc/valkey/valkey.conf
+    command: >-
+      sh -c "valkey-server /usr/local/etc/valkey/valkey.conf"
+
+  # db:
+  #   image: postgres:alpine
+  #   environment:
+  #     <<: *shared-env
+  #     POSTGRES_USER: ${DB_USER:-postgres}
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+  #     POSTGRES_DB: ${DB_NAME:-app}
+  #   volumes:
+  #     - ./app/db/postgres/data:/var/lib/postgresql/data
+  #     - ./app/db/postgres/init:/docker-entrypoint-initdb.d
+  #   ports:
+  #     - 5432:5432

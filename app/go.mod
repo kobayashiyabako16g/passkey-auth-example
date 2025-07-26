@@ -46,6 +46,7 @@ require (
 )
 
 require (
+	github.com/caarlos0/env/v11 v11.3.1
 	github.com/fxamacker/cbor/v2 v2.8.0 // indirect
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-webauthn/x v0.1.23 // indirect
