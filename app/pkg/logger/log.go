@@ -59,3 +59,7 @@ func Warn(ctx context.Context, msg string, args ...any) {
 func Error(ctx context.Context, msg string, args ...any) {
 	logger.ErrorContext(ctx, msg, args...)
 }
+
+func WithError(err error) slog.Attr {
+	return slog.Any("err", err)
+}

@@ -39,6 +39,9 @@ func NewValKeyClient(config ValKeyConfig) (Client, error) {
 func (c *valKeyClient) Get(ctx context.Context, key string) (string, error) {
 	resp := c.client.Do(ctx, c.client.B().Get().Key(key).Build())
 	if err := resp.Error(); err != nil {
+		if valkey.IsValkeyNil(resp.Error()) {
+			return "", nil //  not found
+		}
 		return "", err
 	}
 
@@ -50,12 +53,21 @@ func (c *valKeyClient) Get(ctx context.Context, key string) (string, error) {
 	return val, nil
 }
 
-func (c *valKeyClient) Set(ctx context.Context, key, value string) error {
+func (c *valKeyClient) Set(ctx context.Context, key, value string, opts ...SetOptions) error {
+	var opt SetOptions
+	if len(opts) > 0 {
+		opt = opts[0]
+	} else {
+		opt = SetOptions{
+			Expiration: c.config.Expiration, // default
+		}
+	}
+
 	resp := c.client.Do(ctx, c.client.B().Set().Key(key).Value(value).Build())
 	if err := resp.Error(); err != nil {
 		return err
 	}
-	_, err := c.client.Do(ctx, c.client.B().Expire().Key(key).Seconds(c.config.Expiration).Build()).AsInt64()
+	_, err := c.client.Do(ctx, c.client.B().Expire().Key(key).Seconds(opt.Expiration).Build()).AsInt64()
 	if err != nil {
 		return err
 	}
