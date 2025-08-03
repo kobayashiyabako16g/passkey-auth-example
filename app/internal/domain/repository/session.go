@@ -15,6 +15,7 @@ import (
 const Expire = 10
 
 type Session interface {
+	Create(ctx context.Context) (*model.Session, error)
 	Save(ctx context.Context, session *model.Session) error
 	Get(ctx context.Context, id string) (*model.Session, error)
 }

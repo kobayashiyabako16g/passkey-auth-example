@@ -6,6 +6,7 @@ import (
 )
 
 type Config struct {
+	Port                 string `env:"PORT" envDefault:"8080"`
 	kvstore.ValKeyConfig `envPrefix:"KV_"`
 }
 
