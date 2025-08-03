@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/kobayashiyabako16g/passkey-auth-example/internal/domain/model"
 	"github.com/kobayashiyabako16g/passkey-auth-example/internal/domain/repository"
 	"github.com/kobayashiyabako16g/passkey-auth-example/internal/handler/dto/request"
@@ -65,7 +63,7 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ユーザー登録(確認)
+	// ユーザー確認
 	exists, err := h.ur.ExistsByUsername(ctx, u.Username)
 	if err != nil {
 		logger.Error(ctx, "can't get user", logger.WithError(err))
@@ -78,6 +76,7 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ユーザ作成
 	var user model.User
 	if err = user.GenerateID(); err != nil {
 		logger.Error(ctx, "can't get user", logger.WithError(err))
@@ -95,6 +94,7 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// セッション作成
 	session, err := h.sr.Create(ctx)
 	if err != nil {
 		logger.Error(ctx, "Failed to create session", logger.WithError(err))
@@ -113,6 +113,7 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// クッキー生成
 	h.setSessionCookie(w, session)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -122,18 +123,4 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-}
-
-// TODO: Environment Value
-var jwtSecret = []byte("your-very-secret-key")
-
-func GenerateRegisterJWT(userID string, challenge string) (string, error) {
-	claims := jwt.MapClaims{
-		"sub":       userID,
-		"challenge": challenge,
-		"exp":       time.Now().Add(5 * time.Minute).Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
 }

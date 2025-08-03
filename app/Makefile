@@ -24,7 +24,7 @@ help: ## Show help messages
 .PHONY: build
 build: ## Build app (ex: make build GOOS=linux GOARCH=amd64)
 	@echo "Building for GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED)"
-	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go build -tags timetzdata -o ./bin/app ./cmd/*
+	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go build -tags timetzdata -o ./bin/app ./cmd/auth/*
 
 .PHONY: clean
 clean:
