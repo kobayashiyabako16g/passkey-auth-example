@@ -15,13 +15,14 @@ services:
   api:
     build:
       context: .
+      dockerfile: ./docker/api/Dockerfile
       target: develop
     working_dir: /go/src/app
     command: ["go", "tool", "air"]
     environment:
       <<: *shared-env
     volumes:
-      - ./app:/go/src/app
+      - ./apps/api:/go/src/app
     ports:
       - 8080:8080
 
@@ -45,6 +46,6 @@ services:
       POSTGRES_DB: ${DB_NAME:-app}
     volumes:
       # - ./app/db/postgres/data:/var/lib/postgresql/data
-      - ./app/db/postgres/init:/docker-entrypoint-initdb.d
+      - ./apps/api/db/postgres/init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432

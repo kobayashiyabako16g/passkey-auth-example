@@ -16,7 +16,6 @@ type Server struct {
 	UsersMu      sync.RWMutex
 }
 
-// セッション取得
 func (s *Server) GetSession(c *gin.Context) *model.Session {
 	cookie, err := c.Request.Cookie("session")
 	if err != nil {
@@ -25,7 +24,6 @@ func (s *Server) GetSession(c *gin.Context) *model.Session {
 	return s.SessionStore.Get(cookie.Value)
 }
 
-// セッションクッキー設定
 func (s *Server) SetSessionCookie(c *gin.Context, session *model.Session) {
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     "session",

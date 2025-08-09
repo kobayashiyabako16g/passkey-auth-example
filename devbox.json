@@ -1,19 +1,14 @@
 {
-    "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
-    "packages": ["go@latest"],
-    "env": {
-            "GOPATH": "$PWD/go",
-            "PATH": "$GOPATH/bin:$PATH"
-    },
-    "shell": {
-      "init_hook": [
-        "echo 'Welcome to devbox!' > /dev/null"
-      ],
-      "scripts": {
-        "test": [
-          "echo \"Error: no test specified\" && exit 1"
-        ]
-      }
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
+  "packages": ["go@latest", "nodejs@23", "pnpm@10.11.0"],
+  "env": {
+    "GOPATH": "$PWD/go",
+    "PATH": "$GOPATH/bin:$PATH"
+  },
+  "shell": {
+    "init_hook": ["echo 'Welcome to devbox!' > /dev/null"],
+    "scripts": {
+      "test": ["echo \"Error: no test specified\" && exit 1"]
     }
   }
-  
+}

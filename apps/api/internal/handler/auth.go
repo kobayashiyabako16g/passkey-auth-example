@@ -14,6 +14,7 @@ import (
 
 type Auth interface {
 	BeginRegistration(w http.ResponseWriter, r *http.Request)
+	FinishRegistration(w http.ResponseWriter, r *http.Request)
 }
 
 type auth struct {
@@ -51,27 +52,27 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger.Info(ctx, "begin registration ----------------------")
 
-	var u request.User
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+	var req request.User
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Info(ctx, "can't decode user data", logger.WithError(err))
 		http.Error(w, "Bad Requset", http.StatusBadRequest)
 		return
 	}
-	if u.Username == "" {
+	if req.Username == "" {
 		logger.Info(ctx, "username is empty")
 		http.Error(w, "Bad Requset", http.StatusBadRequest)
 		return
 	}
 
 	// ユーザー確認
-	exists, err := h.ur.ExistsByUsername(ctx, u.Username)
+	exists, err := h.ur.ExistsByUsername(ctx, req.Username)
 	if err != nil {
 		logger.Error(ctx, "can't get user", logger.WithError(err))
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	if exists {
-		logger.Info(ctx, fmt.Sprintf("Exists User name: %s", u.Username))
+		logger.Info(ctx, fmt.Sprintf("Exists User name: %s", req.Username))
 		http.Error(w, "Bad Requset", http.StatusBadRequest)
 		return
 	}
@@ -83,8 +84,8 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	user.Name = u.Username
-	user.DisplayName = u.Username
+	user.Name = req.Username
+	user.DisplayName = req.Username
 
 	// チャレンジ生成
 	options, sessionData, err := h.webAuthn.BeginRegistration(user)
@@ -102,7 +103,7 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session.Username = u.Username
+	session.Username = req.Username
 	session.RegistrationData = sessionData
 
 	// Store に保存
@@ -122,5 +123,60 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+}
 
+func (h *auth) FinishRegistration(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger.Info(ctx, "finish registration ----------------------")
+
+	var req request.FinishUserRegister
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logger.Info(ctx, "can't decode user data", logger.WithError(err))
+		http.Error(w, "Bad Requset", http.StatusBadRequest)
+		return
+	}
+	if req.Username == "" {
+		logger.Info(ctx, "username is empty")
+		http.Error(w, "Bad Requset", http.StatusBadRequest)
+		return
+	}
+
+	// ユーザー確認
+	exists, err := h.ur.ExistsByUsername(ctx, req.Username)
+	if err != nil {
+		logger.Error(ctx, "can't get user", logger.WithError(err))
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		logger.Info(ctx, fmt.Sprintf("Exists User name: %s", req.Username))
+		http.Error(w, "Bad Requset", http.StatusBadRequest)
+		return
+	}
+
+	// セッション確認
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		logger.Info(ctx, "session cookie is not found")
+		http.Error(w, "Bad Requset", http.StatusBadRequest)
+		return
+	}
+	session, err := h.sr.Get(ctx, cookie.Value)
+	if err != nil {
+		logger.Error(ctx, "can't get session", logger.WithError(err))
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	if session == nil || session.RegistrationData == nil {
+		logger.Info(ctx, "session is nil")
+		http.Error(w, "Bad Requset", http.StatusBadRequest)
+		return
+	}
+
+	var user model.User
+	user.ID = cookie.Value
+	user.Name = req.Username
+	user.DisplayName = req.Username
+	h.ur.Create(ctx, &user)
+	return
 }
