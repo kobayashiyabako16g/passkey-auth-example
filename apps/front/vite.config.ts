@@ -1,5 +1,6 @@
-import { defineConfig } from 'vite'
-import { qwikVite } from '@builder.io/qwik/optimizer'
+import { defineConfig } from "vite";
+import UnoCSS from "unocss/vite";
+import { qwikVite } from "@builder.io/qwik/optimizer";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -7,5 +8,6 @@ export default defineConfig({
     qwikVite({
       csr: true,
     }),
+    UnoCSS(),
   ],
-})
+});

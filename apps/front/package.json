@@ -10,15 +10,24 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "serve dist"
+    "preview": "serve dist",
+    "format": "biome format --write",
+    "lint": "biome check"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.1.4",
+    "pnpm": "~10.11.0",
     "serve": "^14.2.4",
     "typescript": "~5.8.3",
-    "vite": "^7.1.0",
-    "pnpm": "~10.11.0"
+    "unocss": "^66.4.2",
+    "vite": "^7.1.0"
   },
   "dependencies": {
     "@builder.io/qwik": "^1.15.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
