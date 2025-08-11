@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	Port                 string `env:"PORT" envDefault:"8080"`
+	AllowOrigin          string `env:"AllowOrigin" envDefault:"http://localhost:5173"`
 	kvstore.ValKeyConfig `envPrefix:"KV_"`
 }
 

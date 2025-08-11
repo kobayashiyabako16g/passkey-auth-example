@@ -36,8 +36,8 @@ func NewAuth(sr repository.Session, ur repository.User) Auth {
 	return &auth{sr, ur, webAuthn}
 }
 
-func (s *auth) setSessionCookie(w http.ResponseWriter, session *model.Session) {
-	http.SetCookie(w, &http.Cookie{
+func (s *auth) setSessionCookie(w *http.ResponseWriter, session *model.Session) {
+	http.SetCookie(*w, &http.Cookie{
 		Name:     "session",
 		Value:    session.ID,
 		Path:     "/",
@@ -115,7 +115,7 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// クッキー生成
-	h.setSessionCookie(w, session)
+	h.setSessionCookie(&w, session)
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(options); err != nil {
