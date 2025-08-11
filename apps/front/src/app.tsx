@@ -1,29 +1,47 @@
-import { component$, useSignal } from '@builder.io/qwik'
+import { useState } from "react";
+import { signUp } from "./api/auth";
 
-import qwikLogo from './assets/qwik.svg'
-import viteLogo from '/vite.svg'
-import './app.css'
+function App() {
+  const [username, setUsername] = useState("");
 
-export const App = component$(() => {
-  const count = useSignal(0)
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = await signUp(username);
+    console.log(data);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} class="logo" alt="Vite logo" />
-        </a>
-        <a href="https://qwik.dev" target="_blank">
-          <img src={qwikLogo} class="logo qwik" alt="Qwik logo" />
-        </a>
-      </div>
-      <h1>Vite + Qwik</h1>
-      <div class="card">
-        <button onClick$={() => count.value++}>count is {count.value}</button>
-      </div>
-      <p class="read-the-docs">
-        Click on the Vite and Qwik logos to learn more
-      </p>
-    </>
-  )
-})
+    <div className="flex items-center justify-center h-screen">
+      <form
+        className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+        onSubmit={handleSubmit}
+      >
+        <div className="mb-4">
+          <label className="block text-sm font-bold mb-2" htmlFor="username">
+            Username
+          </label>
+          <input
+            className="shadow appearance-none border rounded py-2 px-3 leading-tight"
+            id="username"
+            type="text"
+            placeholder="Username"
+            maxLength={30}
+            required
+            onChange={(e) => setUsername(e.target.value)}
+            value={username}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded border-white"
+            type="submit"
+          >
+            Sign Up
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+export default App;
