@@ -1,13 +1,20 @@
 import { useState } from "react";
-import { signUp } from "./api/auth";
+import { signUp } from "@/api/auth";
+import { createPasskey } from "./authn";
 
-function App() {
+function SignUp() {
   const [username, setUsername] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = await signUp(username);
-    console.log(data);
+    console.log("data", data);
+    try {
+      const res = await createPasskey(data.publicKey);
+      console.log("res", res);
+    } catch (error: any) {
+      console.error(error);
+    }
   };
 
   return (
@@ -44,4 +51,4 @@ function App() {
   );
 }
 
-export default App;
+export default SignUp;

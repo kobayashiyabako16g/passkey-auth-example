@@ -1,9 +1,9 @@
 import { API_URL } from "@/configs/env";
 
 export const signUp = async (username: string) => {
-  console.log("Signing up user:", username);
-  const response = await fetch(`${API_URL}/posts`, {
+  const response = await fetch(`${API_URL}/passkey/register/start`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -15,5 +15,6 @@ export const signUp = async (username: string) => {
   }
 
   const data = await response.json();
+
   return data;
 };
