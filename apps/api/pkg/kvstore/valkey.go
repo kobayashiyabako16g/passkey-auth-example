@@ -74,3 +74,12 @@ func (c *valKeyClient) Set(ctx context.Context, key, value string, opts ...SetOp
 
 	return nil
 }
+
+func (c *valKeyClient) Delete(ctx context.Context, key string) error {
+	resp := c.client.Do(ctx, c.client.B().Del().Key(key).Build())
+	if err := resp.Error(); err != nil {
+		return err
+	}
+
+	return nil
+}

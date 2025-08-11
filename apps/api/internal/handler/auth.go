@@ -88,7 +88,7 @@ func (h *auth) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 	user.DisplayName = req.Username
 
 	// チャレンジ生成
-	options, sessionData, err := h.webAuthn.BeginRegistration(user)
+	options, sessionData, err := h.webAuthn.BeginRegistration(&user)
 	if err != nil {
 		logger.Error(ctx, "Error beginning registration", logger.WithError(err))
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -177,6 +177,25 @@ func (h *auth) FinishRegistration(w http.ResponseWriter, r *http.Request) {
 	user.ID = cookie.Value
 	user.Name = req.Username
 	user.DisplayName = req.Username
+
+	credential, err := h.webAuthn.FinishRegistration(&user, *session.RegistrationData, r)
+	if err != nil {
+		logger.Error(ctx, "can't finish registration", logger.WithError(err))
+		// clean up sid cookie
+		http.SetCookie(w, &http.Cookie{
+			Name:  "sid",
+			Value: "",
+		})
+		http.Error(w, "Bad Requset", http.StatusBadRequest)
+		return
+	}
+
+	user.AddCredential(*credential)
 	h.ur.Create(ctx, &user)
-	return
+	// Delete the session data
+	h.sr.Delete(ctx, session)
+	http.SetCookie(w, &http.Cookie{
+		Name:  "sid",
+		Value: "",
+	})
 }

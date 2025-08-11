@@ -38,23 +38,23 @@ func (u *User) GenerateID() error {
 }
 
 // WebAuthnID returns the user's ID
-func (u User) WebAuthnID() []byte {
+func (u *User) WebAuthnID() []byte {
 	buf := []byte(u.ID)
 	return buf
 }
 
 // WebAuthnName returns the user's username
-func (u User) WebAuthnName() string {
+func (u *User) WebAuthnName() string {
 	return u.Name
 }
 
 // WebAuthnDisplayName returns the user's display name
-func (u User) WebAuthnDisplayName() string {
+func (u *User) WebAuthnDisplayName() string {
 	return u.DisplayName
 }
 
 // WebAuthnIcon is not (yet) implemented
-func (u User) WebAuthnIcon() string {
+func (u *User) WebAuthnIcon() string {
 	return ""
 }
 
@@ -64,6 +64,14 @@ func (u *User) AddCredential(cred webauthn.Credential) {
 }
 
 // WebAuthnCredentials returns credentials owned by the user
-func (u User) WebAuthnCredentials() []webauthn.Credential {
+func (u *User) WebAuthnCredentials() []webauthn.Credential {
 	return u.Credentials
+}
+
+func (u *User) UpdateCredential(credential *webauthn.Credential) {
+	for i, c := range u.Credentials {
+		if string(c.ID) == string(credential.ID) {
+			u.Credentials[i] = *credential
+		}
+	}
 }

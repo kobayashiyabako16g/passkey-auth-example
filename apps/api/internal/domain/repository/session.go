@@ -18,6 +18,7 @@ type Session interface {
 	Create(ctx context.Context) (*model.Session, error)
 	Save(ctx context.Context, session *model.Session) error
 	Get(ctx context.Context, id string) (*model.Session, error)
+	Delete(ctx context.Context, session *model.Session) error
 }
 
 type sessionImpl struct {
@@ -73,6 +74,11 @@ func (s *sessionImpl) Get(ctx context.Context, key string) (*model.Session, erro
 	}
 
 	return &session, nil
+}
+
+func (s *sessionImpl) Delete(ctx context.Context, session *model.Session) error {
+	key := s.getKey(session.ID)
+	return s.client.Delete(ctx, key)
 }
 
 func (s *sessionImpl) getKey(sessionID string) string {
