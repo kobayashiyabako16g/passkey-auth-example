@@ -39,7 +39,8 @@ func main() {
 	router := handler.NewRouter(auth)
 	router.HandleRequest(mux)
 
-	server := middleware.LogMiddleware(mux)
+	server := middleware.CORSMiddleware(mux)
+	server = middleware.LogMiddleware(server)
 	port := fmt.Sprintf(":%s", cfg.Port)
 	logger.Info(ctx, fmt.Sprintf("Starting server on port %s", port))
 	if err := http.ListenAndServe(port, server); err != nil {
