@@ -1,0 +1,119 @@
+package usecase
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/kobayashiyabako16g/passkey-auth-example/internal/domain/model"
+	"github.com/kobayashiyabako16g/passkey-auth-example/internal/domain/repository"
+	dtos "github.com/kobayashiyabako16g/passkey-auth-example/internal/usecase/dto/auth"
+	"github.com/kobayashiyabako16g/passkey-auth-example/pkg/logger"
+)
+
+type Auth interface {
+	BeginRegistration(ctx context.Context, dto dtos.BeginRegistrationRequest) (*dtos.BeginRegistrationResponse, error)
+	FinishRegistration(ctx context.Context, dto dtos.FinishRegistrationRequest) error
+}
+
+type auth struct {
+	sr       repository.Session
+	ur       repository.User
+	webAuthn *webauthn.WebAuthn
+}
+
+func NewAuth(sr repository.Session, ur repository.User, webAuthn *webauthn.WebAuthn) Auth {
+	return &auth{
+		sr:       sr,
+		ur:       ur,
+		webAuthn: webAuthn,
+	}
+}
+
+func (a *auth) BeginRegistration(ctx context.Context, dto dtos.BeginRegistrationRequest) (*dtos.BeginRegistrationResponse, error) {
+	// ユーザー確認
+	exists, err := a.ur.ExistsByUsername(ctx, dto.Username)
+	if err != nil {
+		logger.Error(ctx, "can't get user", logger.WithError(err))
+		return nil, err
+	}
+	if exists {
+		logger.Info(ctx, fmt.Sprintf("Exists User name: %s", dto.Username))
+		return nil, dtos.ErrUserExists
+	}
+
+	// ユーザ作成
+	var user model.User
+	if err = user.GenerateID(); err != nil {
+		logger.Error(ctx, "can't get user", logger.WithError(err))
+		return nil, err
+	}
+	user.Name = dto.Username
+	user.DisplayName = dto.Username
+
+	// チャレンジ生成
+	options, sessionData, err := a.webAuthn.BeginRegistration(&user)
+	if err != nil {
+		logger.Error(ctx, "Error beginning registration", logger.WithError(err))
+		return nil, err
+	}
+
+	// セッション作成
+	session, err := a.sr.Create(ctx)
+	if err != nil {
+		logger.Error(ctx, "Failed to create session", logger.WithError(err))
+		return nil, err
+	}
+
+	session.Username = dto.Username
+	session.RegistrationData = sessionData
+
+	// Store に保存
+	err = a.sr.Save(ctx, session)
+	if err != nil {
+		logger.Error(ctx, "Failed to store challenge", logger.WithError(err))
+		return nil, err
+	}
+	return &dtos.BeginRegistrationResponse{Cred: options, Session: session}, nil
+}
+
+func (a *auth) FinishRegistration(ctx context.Context, dto dtos.FinishRegistrationRequest) error {
+	// ユーザー確認
+	exists, err := a.ur.ExistsByUsername(ctx, dto.Username)
+	if err != nil {
+		logger.Error(ctx, "can't get user", logger.WithError(err))
+		return err
+	}
+	if exists {
+		logger.Info(ctx, fmt.Sprintf("Exists User name: %s", dto.Username))
+		return dtos.ErrUserExists
+	}
+
+	session, err := a.sr.Get(ctx, dto.Session)
+	if err != nil {
+		logger.Error(ctx, "can't get session", logger.WithError(err))
+		return err
+	}
+	if session == nil || session.RegistrationData == nil {
+		logger.Info(ctx, "session is nil")
+		return dtos.ErrSessionNotFound
+	}
+
+	var user model.User
+	user.ID = dto.Session
+	user.Name = dto.Username
+	user.DisplayName = dto.Username
+
+	credential, err := a.webAuthn.FinishRegistration(&user, *session.RegistrationData, dto.Request)
+	if err != nil {
+		logger.Error(ctx, "can't finish registration", logger.WithError(err))
+		return dtos.ErrFinishRegistration
+	}
+
+	user.AddCredential(*credential)
+	a.ur.Create(ctx, &user)
+	// Delete the session data
+	a.sr.Delete(ctx, session)
+
+	return nil
+}

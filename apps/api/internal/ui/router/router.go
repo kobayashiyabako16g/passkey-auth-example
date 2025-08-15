@@ -1,12 +1,16 @@
-package handler
+package router
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/kobayashiyabako16g/passkey-auth-example/internal/ui/handler"
+)
 
 type Router struct {
-	ah Auth
+	ah handler.Auth
 }
 
-func NewRouter(ah Auth) Router {
+func NewRouter(ah handler.Auth) Router {
 	return Router{ah}
 }
 
