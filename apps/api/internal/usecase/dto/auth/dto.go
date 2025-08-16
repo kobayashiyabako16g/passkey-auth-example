@@ -31,3 +31,8 @@ type BeginLoginResponse struct {
 	Cred    *protocol.CredentialAssertion
 	Session *model.Session
 }
+
+type FinishLoginRequest struct {
+	Session string
+	Request *http.Request
+}

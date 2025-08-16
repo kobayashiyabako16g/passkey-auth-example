@@ -15,6 +15,7 @@ type Auth interface {
 	BeginRegistration(ctx context.Context, dto dtos.BeginRegistrationRequest) (*dtos.BeginRegistrationResponse, error)
 	FinishRegistration(ctx context.Context, dto dtos.FinishRegistrationRequest) error
 	BeginLogin(ctx context.Context, dto dtos.BeginLoginRequest) (*dtos.BeginLoginResponse, error)
+	FinishLogin(ctx context.Context, dto dtos.FinishLoginRequest) error
 }
 
 type auth struct {
@@ -165,4 +166,42 @@ func (a *auth) BeginLogin(ctx context.Context, dto dtos.BeginLoginRequest) (*dto
 		Cred:    options,
 		Session: session,
 	}, nil
+}
+
+func (a *auth) FinishLogin(ctx context.Context, dto dtos.FinishLoginRequest) error {
+
+	// Session確認
+	session, err := a.sr.Get(ctx, dto.Session)
+	if err != nil {
+		logger.Error(ctx, "can't get session", logger.WithError(err))
+		return err
+	}
+	if session == nil || session.AuthenticationData == nil {
+		logger.Error(ctx, "session not found")
+		return dtos.ErrSessionNotFound
+	}
+
+	// user確認
+	user, err := a.ur.FindByUsername(ctx, session.Username)
+	if err != nil {
+		logger.Error(ctx, "can't find user", logger.WithError(err))
+		return err
+	}
+
+	_, err = a.webAuthn.FinishLogin(user, *session.RegistrationData, dto.Request)
+	if err != nil {
+		logger.Error(ctx, "can't finish login", logger.WithError(err))
+		return err
+	}
+
+	// success
+	session.Authenticated = true
+	session.AuthenticationData = nil
+
+	if err := a.sr.Save(ctx, session); err != nil {
+		logger.Error(ctx, "can't save session", logger.WithError(err))
+		return err
+	}
+
+	return nil
 }

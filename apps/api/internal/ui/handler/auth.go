@@ -15,6 +15,7 @@ type Auth interface {
 	BeginRegistration(w http.ResponseWriter, r *http.Request)
 	FinishRegistration(w http.ResponseWriter, r *http.Request)
 	BeginLogin(w http.ResponseWriter, r *http.Request)
+	FinishLogin(w http.ResponseWriter, r *http.Request)
 }
 
 type auth struct {
@@ -175,6 +176,39 @@ func (h *auth) BeginLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+}
 
-	return
+func (h *auth) FinishLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger.Info(ctx, "Finish login ----------------------")
+
+	// セッション確認
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		logger.Info(ctx, "session cookie is not found")
+		http.Error(w, "Bad Requset", http.StatusBadRequest)
+		return
+	}
+	if cookie.Value == "" {
+		logger.Info(ctx, "session cookie is empty")
+		http.Error(w, "Bad Requset", http.StatusBadRequest)
+		return
+	}
+
+	// usecase
+	err = h.usecase.FinishLogin(ctx, dtos.FinishLoginRequest{
+		Session: cookie.Value,
+		Request: r,
+	})
+	if err != nil {
+		switch err {
+		case dtos.ErrSessionNotFound:
+			http.Error(w, "Bad Requset", http.StatusBadRequest)
+		default:
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
