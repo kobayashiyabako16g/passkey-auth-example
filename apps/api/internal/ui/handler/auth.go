@@ -132,3 +132,22 @@ func (h *auth) FinishRegistration(w http.ResponseWriter, r *http.Request) {
 		Value: "",
 	})
 }
+
+func (h *auth) BeginLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger.Info(ctx, "begin Login ----------------------")
+
+	var req request.User
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logger.Info(ctx, "can't decode user data", logger.WithError(err))
+		http.Error(w, "Bad Requset", http.StatusBadRequest)
+		return
+	}
+
+	// usecase
+
+	// cookie
+
+	// option返却
+
+}

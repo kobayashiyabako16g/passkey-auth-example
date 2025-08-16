@@ -8,7 +8,7 @@ import (
 )
 
 type BeginRegistrationRequest struct {
-	Username string `json:"username"`
+	Username string
 }
 
 type BeginRegistrationResponse struct {
@@ -17,7 +17,11 @@ type BeginRegistrationResponse struct {
 }
 
 type FinishRegistrationRequest struct {
-	Username string `json:"username"`
+	Username string
 	Session  string
 	Request  *http.Request
+}
+
+type BeginLoginRequest struct {
+	Username string
 }
