@@ -80,17 +80,6 @@ func (a *auth) BeginRegistration(ctx context.Context, dto dtos.BeginRegistration
 }
 
 func (a *auth) FinishRegistration(ctx context.Context, dto dtos.FinishRegistrationRequest) error {
-	// ユーザー確認
-	exists, err := a.ur.ExistsByUsername(ctx, dto.Username)
-	if err != nil {
-		logger.Error(ctx, "can't get user", logger.WithError(err))
-		return err
-	}
-	if exists {
-		logger.Info(ctx, fmt.Sprintf("Exists User name: %s", dto.Username))
-		return dtos.ErrUserExists
-	}
-
 	session, err := a.sr.Get(ctx, dto.Session)
 	if err != nil {
 		logger.Error(ctx, "can't get session", logger.WithError(err))
@@ -101,10 +90,21 @@ func (a *auth) FinishRegistration(ctx context.Context, dto dtos.FinishRegistrati
 		return dtos.ErrSessionNotFound
 	}
 
+	// ユーザー確認
+	exists, err := a.ur.ExistsByUsername(ctx, session.Username)
+	if err != nil {
+		logger.Error(ctx, "can't get user", logger.WithError(err))
+		return err
+	}
+	if exists {
+		logger.Info(ctx, fmt.Sprintf("Exists User name: %s", session.Username))
+		return dtos.ErrUserExists
+	}
+
 	var user model.User
 	user.ID = dto.Session
-	user.Name = dto.Username
-	user.DisplayName = dto.Username
+	user.Name = session.Username
+	user.DisplayName = session.Username
 
 	credential, err := a.webAuthn.FinishRegistration(&user, *session.RegistrationData, dto.Request)
 	if err != nil {

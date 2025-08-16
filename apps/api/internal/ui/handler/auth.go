@@ -83,34 +83,22 @@ func (h *auth) FinishRegistration(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger.Info(ctx, "finish registration ----------------------")
 
-	var req request.FinishUserRegister
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		logger.Info(ctx, "can't decode user data", logger.WithError(err))
-		http.Error(w, "Bad Requset", http.StatusBadRequest)
-		return
-	}
-	if req.Username == "" {
-		logger.Info(ctx, "username is empty")
-		http.Error(w, "Bad Requset", http.StatusBadRequest)
-		return
-	}
 	// セッション確認
 	cookie, err := r.Cookie("session")
 	if err != nil {
-		logger.Info(ctx, "session cookie is not found")
+		logger.Info(ctx, "Handler: session cookie is not found")
 		http.Error(w, "Bad Requset", http.StatusBadRequest)
 		return
 	}
 	if cookie.Value == "" {
-		logger.Info(ctx, "session cookie is empty")
+		logger.Info(ctx, "Handler: session cookie is empty")
 		http.Error(w, "Bad Requset", http.StatusBadRequest)
 		return
 	}
 
 	err = h.usecase.FinishRegistration(ctx, dtos.FinishRegistrationRequest{
-		Username: req.Username,
-		Session:  cookie.Value,
-		Request:  r,
+		Session: cookie.Value,
+		Request: r,
 	})
 	if err != nil {
 		switch err {

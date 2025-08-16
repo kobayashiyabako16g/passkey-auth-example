@@ -6,7 +6,7 @@ import {
 } from "@simplewebauthn/browser";
 
 export type PublicKey = PublicKeyCredentialCreationOptionsJSON;
-type RegistrationResponse = RegistrationResponseJSON;
+export type RegistrationResponse = RegistrationResponseJSON;
 
 /**
  * Start the registration process for a new passkey.

@@ -17,9 +17,8 @@ type BeginRegistrationResponse struct {
 }
 
 type FinishRegistrationRequest struct {
-	Username string
-	Session  string
-	Request  *http.Request
+	Session string
+	Request *http.Request
 }
 
 type BeginLoginRequest struct {

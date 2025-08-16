@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signUp } from "@/api/auth";
+import { signUp, signUpFinish } from "@/api/auth";
 import { createPasskey } from "./authn";
 
 function SignUp() {
@@ -12,6 +12,9 @@ function SignUp() {
     try {
       const res = await createPasskey(data.publicKey);
       console.log("res", res);
+
+      const result = await signUpFinish(res);
+      console.log("result", result);
     } catch (error: any) {
       console.error(error);
     }
