@@ -14,6 +14,7 @@ import (
 type Auth interface {
 	BeginRegistration(w http.ResponseWriter, r *http.Request)
 	FinishRegistration(w http.ResponseWriter, r *http.Request)
+	BeginLogin(w http.ResponseWriter, r *http.Request)
 }
 
 type auth struct {
@@ -144,10 +145,36 @@ func (h *auth) BeginLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// usecase
+	var login dtos.BeginLoginRequest
+	login.Username = req.Username
+	// セッション確認
+	cookie, err := r.Cookie("session")
+	if err == nil {
+		logger.Info(ctx, "session cookie is not found")
+		login.Session = cookie.Value
+	}
 
-	// cookie
+	// usecase
+	result, err := h.usecase.BeginLogin(ctx, login)
+	if err != nil {
+		switch err {
+		case dtos.ErrUserNotFound:
+			http.Error(w, "Bad Requset", http.StatusBadRequest)
+		default:
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	h.setSessionCookie(&w, result.Session)
 
 	// option返却
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(result.Cred); err != nil {
+		logger.Error(ctx, "Failed to write response", logger.WithError(err))
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
+	return
 }

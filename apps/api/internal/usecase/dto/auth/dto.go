@@ -24,4 +24,10 @@ type FinishRegistrationRequest struct {
 
 type BeginLoginRequest struct {
 	Username string
+	Session  string
+}
+
+type BeginLoginResponse struct {
+	Cred    *protocol.CredentialAssertion
+	Session *model.Session
 }
