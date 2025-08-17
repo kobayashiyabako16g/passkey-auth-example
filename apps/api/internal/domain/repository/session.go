@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kobayashiyabako16g/passkey-auth-example/internal/domain/model"
 	"github.com/kobayashiyabako16g/passkey-auth-example/pkg/kvstore"
 )
@@ -15,7 +14,7 @@ import (
 const Expire = 10
 
 type Session interface {
-	Create(ctx context.Context) (*model.Session, error)
+	Create(ctx context.Context, id string) (*model.Session, error)
 	Save(ctx context.Context, session *model.Session) error
 	Get(ctx context.Context, id string) (*model.Session, error)
 	Delete(ctx context.Context, session *model.Session) error
@@ -29,9 +28,9 @@ func NewSession(client kvstore.Client) Session {
 	return &sessionImpl{client}
 }
 
-func (s *sessionImpl) Create(ctx context.Context) (*model.Session, error) {
+func (s *sessionImpl) Create(ctx context.Context, id string) (*model.Session, error) {
 	session := &model.Session{
-		ID:        s.generateSessionID(),
+		ID:        id,
 		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
 
@@ -83,12 +82,4 @@ func (s *sessionImpl) Delete(ctx context.Context, session *model.Session) error 
 
 func (s *sessionImpl) getKey(sessionID string) string {
 	return fmt.Sprintf("session:%s", sessionID)
-}
-
-func (s *sessionImpl) generateSessionID() string {
-	uid, err := uuid.NewV7()
-	if err != nil {
-		panic(err)
-	}
-	return uid.String()
 }

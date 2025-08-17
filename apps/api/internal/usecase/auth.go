@@ -61,7 +61,7 @@ func (a *auth) BeginRegistration(ctx context.Context, dto dtos.BeginRegistration
 	}
 
 	// セッション作成
-	session, err := a.sr.Create(ctx)
+	session, err := a.sr.Create(ctx, user.ID)
 	if err != nil {
 		logger.Error(ctx, "Failed to create session", logger.WithError(err))
 		return nil, err
@@ -147,7 +147,7 @@ func (a *auth) BeginLogin(ctx context.Context, dto dtos.BeginLoginRequest) (*dto
 		return nil, err
 	}
 	if session == nil {
-		session, err = a.sr.Create(ctx)
+		session, err = a.sr.Create(ctx, user.ID)
 		if err != nil {
 			logger.Error(ctx, "can't create session", logger.WithError(err))
 			return nil, err

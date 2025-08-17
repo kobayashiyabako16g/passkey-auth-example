@@ -50,20 +50,20 @@ func (r *userRepository) ExistsByUsername(ctx context.Context, username string) 
 }
 
 func (r *userRepository) Create(ctx context.Context, user *model.User) error {
-	stmt, err := r.db.PrepareContext(ctx, "INSERT INTO users (id, name, email, displayName) VALUES ($1, $2, $3, $4)")
+	stmt, err := r.db.PrepareContext(ctx, "INSERT INTO users (id, name, display_name) VALUES ($1, $2, $3)")
 	if err != nil {
 		logger.Error(ctx, "Database Error", logger.WithError(err))
 		return err
 	}
 	defer stmt.Close()
 
-	res, err := stmt.ExecContext(ctx, user.ID, user.Name, user.Email, user.DisplayName)
+	res, err := stmt.ExecContext(ctx, user.ID, user.Name, user.DisplayName)
 	if err != nil {
 		logger.Error(ctx, "Database Error", logger.WithError(err))
 		return err
 	}
 
-	row, err := res.LastInsertId()
+	row, err := res.RowsAffected()
 	if err != nil {
 		logger.Error(ctx, "Database Error", logger.WithError(err))
 		return err
@@ -75,7 +75,7 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 }
 
 func (r *userRepository) FindByUsername(ctx context.Context, username string) (*model.User, error) {
-	stmt, err := r.db.PrepareContext(ctx, "SELECT id, name, email, displayName FROM users WHERE name = $1")
+	stmt, err := r.db.PrepareContext(ctx, "SELECT id, name, display_name FROM users WHERE name = $1")
 	if err != nil {
 		logger.Error(ctx, "Database Error", logger.WithError(err))
 		return nil, err
@@ -83,7 +83,7 @@ func (r *userRepository) FindByUsername(ctx context.Context, username string) (*
 	defer stmt.Close()
 
 	var user model.User
-	if err = stmt.QueryRowContext(ctx, username).Scan(&user.ID, &user.Name, &user.Email, &user.DisplayName); err != nil {
+	if err = stmt.QueryRowContext(ctx, username).Scan(&user.ID, &user.Name, &user.DisplayName); err != nil {
 
 		//Not found
 		if err == sql.ErrNoRows {

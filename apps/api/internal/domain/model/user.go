@@ -11,7 +11,6 @@ import (
 type User struct {
 	ID          string                `json:"id"`
 	Name        string                `json:"name"`
-	Email       string                `json:"email"`
 	DisplayName string                `json:"displayName"`
 	Credentials []webauthn.Credential `json:"credentials"`
 }

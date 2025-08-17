@@ -1,5 +1,6 @@
 x-shared-env: &shared-env
   APP_ENV: development
+  LOG_LEVEL: debug
   # Valkey
   KV_INIT_ADDRESS: ${KV_INIT_ADDRESS:-kv:6379}
   KV_USERNAME: ${KV_USERNAME:-kv}
