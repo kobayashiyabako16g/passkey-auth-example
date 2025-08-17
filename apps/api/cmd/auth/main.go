@@ -36,9 +36,9 @@ func main() {
 
 	// webautn
 	wconfig := &webauthn.Config{
-		RPDisplayName: "Passkey Demo",                    // Display Name for your site
-		RPID:          "localhost",                       // Generally the domain name for your site
-		RPOrigins:     []string{"http://localhost:5173"}, // Vite dev server origin
+		RPDisplayName: "Passkey Demo",            // Display Name for your site
+		RPID:          cfg.AllowDomain,           // Generally the domain name for your site
+		RPOrigins:     []string{cfg.AllowOrigin}, // Vite dev server origin
 	}
 	webAuthn, err := webauthn.New(wconfig)
 	if err != nil {

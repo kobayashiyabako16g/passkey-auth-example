@@ -1,0 +1,12 @@
+myserver.localhost {
+    # APIリクエストをGoバックエンドに転送
+    # `api:8080`はcompose.ymlで定義したサービス名とポート
+    handle_path /api/* {
+        reverse_proxy api:8080
+    }
+
+     handle /* {
+        reverse_proxy front:5173
+    }
+
+}

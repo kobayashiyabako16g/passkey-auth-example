@@ -33,7 +33,7 @@ func (s *auth) setSessionCookie(w *http.ResponseWriter, session *model.Session) 
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteNoneMode, // Required for cross-origin requests
-		Secure:   false,                 // Set to true in production with HTTPS
+		Secure:   true,                  // Set to true in production with HTTPS
 		Expires:  session.ExpiresAt,
 	})
 }

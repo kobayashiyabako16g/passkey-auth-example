@@ -11,7 +11,28 @@ x-shared-env: &shared-env
   DB_PASSWORD: ${DB_PASSWORD:-postgres}
   DB_NAME: ${DB_NAME:-app}
 
+x-front-env: &front-env
+  VITE_API_URL: https://myserver.localhost/api
+
+x-api-env: &api-env
+  <<: *shared-env
+  ALLOW_DOMAIN: myserver.localhost # caddy config (`.docker/caddy/conf`)
+  ALLOW_ORIGIN: https://myserver.localhost # caddy config (`.docker/caddy/conf`)
+
 services:
+  front:
+    build:
+      context: .
+      dockerfile: ./docker/front/Dockerfile
+      target: develop
+    command: ["pnpm", "run", "dev", "--host", "0.0.0.0"]
+    volumes:
+      - ./apps/front:/app
+    ports:
+      - 5173:5173
+    environment:
+      <<: *front-env
+
   api:
     build:
       context: .
@@ -20,7 +41,7 @@ services:
     working_dir: /go/src/app
     command: ["go", "tool", "air"]
     environment:
-      <<: *shared-env
+      <<: *api-env
     volumes:
       - ./apps/api:/go/src/app
     ports:
@@ -49,3 +70,19 @@ services:
       - ./apps/api/db/postgres/init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
+
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/caddy/conf:/etc/caddy
+      - caddy_data:/data
+    depends_on:
+      - front
+      - api
+
+volumes:
+  caddy_data:
