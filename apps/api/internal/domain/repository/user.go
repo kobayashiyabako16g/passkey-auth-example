@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/kobayashiyabako16g/passkey-auth-example/internal/domain/model"
 	"github.com/kobayashiyabako16g/passkey-auth-example/pkg/db"
 	"github.com/kobayashiyabako16g/passkey-auth-example/pkg/logger"
@@ -73,6 +74,7 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 
 	logger.Debug(ctx, fmt.Sprintf("Last Insert user id: %v", row))
 
+	// credentials table
 	jsonData, err := json.Marshal(user.Credentials[0])
 	if err != nil {
 		logger.Error(ctx, "Database Error", logger.WithError(err))
@@ -123,5 +125,52 @@ func (r *userRepository) FindByUsername(ctx context.Context, username string) (*
 		return nil, err
 	}
 	logger.Info(ctx, fmt.Sprintf("Exists username: %s", username))
+
+	// credentials table select
+	stmt, err = r.db.PrepareContext(ctx, "SELECT metadata FROM credentials WHERE user_id = $1")
+	if err != nil {
+		logger.Error(ctx, "Database Error", logger.WithError(err))
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx, user.ID)
+	if err != nil {
+		logger.Error(ctx, "Database Error", logger.WithError(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		logger.Info(ctx, fmt.Sprintf("repo: No Exists credential: %s", username))
+		return &user, nil
+	}
+
+	var credentials []webauthn.Credential
+	for rows.Next() {
+		var metadata []byte
+		if err := rows.Scan(&metadata); err != nil {
+			logger.Error(ctx, "Database Error", logger.WithError(err))
+			return nil, err
+		}
+
+		var credential webauthn.Credential
+		if err := json.Unmarshal(metadata, &credential); err != nil {
+			logger.Error(ctx, "JSON Unmarshal Error", logger.WithError(err))
+			continue // Skip this credential but continue with others
+		}
+
+		credentials = append(credentials, credential)
+	}
+
+	if err := rows.Err(); err != nil { // ADDED: check for iteration errors
+		logger.Error(ctx, "Database Rows Error", logger.WithError(err))
+		return nil, err
+	}
+
+	user.Credentials = credentials
+
+	logger.Info(ctx, fmt.Sprintf("Found user %s with %d credentials", username, len(credentials)))
+
 	return &user, nil
 }

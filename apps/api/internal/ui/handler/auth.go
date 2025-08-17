@@ -121,6 +121,8 @@ func (h *auth) FinishRegistration(w http.ResponseWriter, r *http.Request) {
 		Name:  "sid",
 		Value: "",
 	})
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
 func (h *auth) BeginLogin(w http.ResponseWriter, r *http.Request) {
