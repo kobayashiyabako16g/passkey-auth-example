@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"github.com/kobayashiyabako16g/passkey-auth-example/internal/domain/model"
@@ -50,6 +51,7 @@ func (r *userRepository) ExistsByUsername(ctx context.Context, username string) 
 }
 
 func (r *userRepository) Create(ctx context.Context, user *model.User) error {
+	// users table
 	stmt, err := r.db.PrepareContext(ctx, "INSERT INTO users (id, name, display_name) VALUES ($1, $2, $3)")
 	if err != nil {
 		logger.Error(ctx, "Database Error", logger.WithError(err))
@@ -70,6 +72,32 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 	}
 
 	logger.Debug(ctx, fmt.Sprintf("Last Insert id: %v", row))
+
+	// credentials table
+	var jsonDatas []byte
+	for _, credential := range user.Credentials {
+		jsonData, err := json.Marshal(credential)
+		if err != nil {
+			logger.Error(ctx, "Database Error", logger.WithError(err))
+			return err
+		}
+		jsonDatas = append(jsonDatas, jsonData...)
+	}
+
+	stmt, err = r.db.PrepareContext(ctx, "INSERT INTO credentials (user_id, metadata) VALUES ($1, $2)")
+	if err != nil {
+		logger.Error(ctx, "Database Error", logger.WithError(err))
+		return err
+	}
+	defer stmt.Close()
+
+	for _, metadata := range jsonDatas {
+		res, err = stmt.ExecContext(ctx, user.ID, metadata)
+		if err != nil {
+			logger.Error(ctx, "Database Error", logger.WithError(err))
+			return err
+		}
+	}
 
 	return nil
 }
