@@ -71,17 +71,12 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 		return err
 	}
 
-	logger.Debug(ctx, fmt.Sprintf("Last Insert id: %v", row))
+	logger.Debug(ctx, fmt.Sprintf("Last Insert user id: %v", row))
 
-	// credentials table
-	var jsonDatas []byte
-	for _, credential := range user.Credentials {
-		jsonData, err := json.Marshal(credential)
-		if err != nil {
-			logger.Error(ctx, "Database Error", logger.WithError(err))
-			return err
-		}
-		jsonDatas = append(jsonDatas, jsonData...)
+	jsonData, err := json.Marshal(user.Credentials[0])
+	if err != nil {
+		logger.Error(ctx, "Database Error", logger.WithError(err))
+		return err
 	}
 
 	stmt, err = r.db.PrepareContext(ctx, "INSERT INTO credentials (user_id, metadata) VALUES ($1, $2)")
@@ -91,13 +86,19 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 	}
 	defer stmt.Close()
 
-	for _, metadata := range jsonDatas {
-		res, err = stmt.ExecContext(ctx, user.ID, metadata)
-		if err != nil {
-			logger.Error(ctx, "Database Error", logger.WithError(err))
-			return err
-		}
+	res, err = stmt.ExecContext(ctx, user.ID, jsonData)
+	if err != nil {
+		logger.Error(ctx, "Database Error", logger.WithError(err))
+		return err
 	}
+
+	row, err = res.RowsAffected()
+	if err != nil {
+		logger.Error(ctx, "Database Error", logger.WithError(err))
+		return err
+	}
+
+	logger.Debug(ctx, fmt.Sprintf("Last Insert session id: %v", row))
 
 	return nil
 }
