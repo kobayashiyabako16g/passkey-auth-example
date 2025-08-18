@@ -132,6 +132,7 @@ func (a *auth) BeginLogin(ctx context.Context, dto dtos.BeginLoginRequest) (*dto
 		logger.Error(ctx, "user not found")
 		return nil, dtos.ErrUserNotFound
 	}
+	logger.Info(ctx, fmt.Sprintf("user credential: %v", user.Credentials[0]))
 
 	// webauthn
 	options, sessionData, err := a.webAuthn.BeginLogin(user)

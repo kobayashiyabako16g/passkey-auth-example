@@ -146,6 +146,8 @@ func (r *userRepository) FindByUsername(ctx context.Context, username string) (*
 		return &user, nil
 	}
 
+	logger.Info(ctx, "repo: Fetching credential")
+
 	var credentials []webauthn.Credential
 	for rows.Next() {
 		var metadata []byte
@@ -160,6 +162,8 @@ func (r *userRepository) FindByUsername(ctx context.Context, username string) (*
 			continue // Skip this credential but continue with others
 		}
 
+		logger.Info(ctx, fmt.Sprintf("repo: Found credential: %s", credential.ID))
+
 		credentials = append(credentials, credential)
 	}
 
@@ -170,7 +174,7 @@ func (r *userRepository) FindByUsername(ctx context.Context, username string) (*
 
 	user.Credentials = credentials
 
-	logger.Info(ctx, fmt.Sprintf("Found user %s with %d credentials", username, len(credentials)))
+	logger.Info(ctx, fmt.Sprintf("Repo: Found user %s with %d credentials", username, len(credentials)))
 
 	return &user, nil
 }
