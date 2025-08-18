@@ -15,7 +15,7 @@ function SignUp() {
 
       const result = await signUpFinish(res);
       console.log("result", result);
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
     }
   };

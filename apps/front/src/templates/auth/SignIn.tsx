@@ -1,11 +1,22 @@
 import { useState } from "react";
+import { loginFinish, loginStart } from "@/api/auth";
+import { authenticatePasskey } from "./authn";
 
 function SignIn() {
   const [username, setUsername] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(username);
+    const data = await loginStart(username);
+    try {
+      const res = await authenticatePasskey(data.publicKey);
+      console.log(res);
+
+      const result = await loginFinish(res);
+      console.log(result);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (

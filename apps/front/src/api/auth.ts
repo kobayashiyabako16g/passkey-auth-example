@@ -1,5 +1,8 @@
 import { API_URL } from "@/configs/env";
-import type { RegistrationResponse } from "@/templates/auth/authn";
+import type {
+  RegistrationResponse,
+  AuthenticationResponse,
+} from "@/templates/auth/authn";
 
 export const signUp = async (username: string) => {
   const response = await fetch(`${API_URL}/passkey/register/start`, {
@@ -58,7 +61,7 @@ export const loginStart = async (username: string) => {
   return data;
 };
 
-export const loginFinish = async (dto: RegistrationResponse) => {
+export const loginFinish = async (dto: AuthenticationResponse) => {
   const response = await fetch(`${API_URL}/passkey/login/finish`, {
     method: "POST",
     credentials: "include",
