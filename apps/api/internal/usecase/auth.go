@@ -141,7 +141,6 @@ func (a *auth) BeginLogin(ctx context.Context, dto dtos.BeginLoginRequest) (*dto
 
 	// webauthn
 	options, sessionData, err := a.webAuthn.BeginDiscoverableMediatedLogin(protocol.MediationDefault)
-	// options, sessionData, err := a.webAuthn.BeginLogin(user)
 	if err != nil {
 		logger.Error(ctx, "can't begin login", logger.WithError(err))
 		return nil, err
@@ -188,14 +187,6 @@ func (a *auth) FinishLogin(ctx context.Context, dto dtos.FinishLoginRequest) err
 		return dtos.ErrSessionNotFound
 	}
 
-	// user確認
-	// user, err := a.ur.FindByUsername(ctx, session.Username)
-	// if err != nil {
-	// 	logger.Error(ctx, "can't find user", logger.WithError(err))
-	// 	return err
-	// }
-
-	// _, err = a.webAuthn.FinishLogin(user, *session.AuthenticationData, dto.Request)
 	validatedUser, validatedCredential, err := a.webAuthn.FinishPasskeyLogin(a.loadUserPasskeyHandler, *session.AuthenticationData, dto.Request)
 	if err != nil {
 		logger.Error(ctx, "can't finish login", logger.WithError(err))
@@ -228,7 +219,7 @@ func (a *auth) FinishLogin(ctx context.Context, dto dtos.FinishLoginRequest) err
 }
 
 func (a *auth) loadUserPasskeyHandler(rawID []byte, userHandle []byte) (webauthn.User, error) {
-	// Crude / Abstract example of retrieving the user for the rawID/userHandle value.
-	user, err := a.ur.FindById(context.Background(), string(rawID))
+	ctx := context.Background()
+	user, err := a.ur.FindById(ctx, string(userHandle))
 	return user, err
 }
