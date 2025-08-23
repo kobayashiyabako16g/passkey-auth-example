@@ -8,6 +8,7 @@ import (
 
 	"github.com/kobayashiyabako16g/passkey-auth-example/internal/domain/model"
 	"github.com/kobayashiyabako16g/passkey-auth-example/pkg/kvstore"
+	"github.com/kobayashiyabako16g/passkey-auth-example/pkg/logger"
 )
 
 // KV Expire
@@ -43,6 +44,7 @@ func (s *sessionImpl) Create(ctx context.Context, id string) (*model.Session, er
 
 func (s *sessionImpl) Save(ctx context.Context, session *model.Session) error {
 	key := s.getKey(session.ID)
+	logger.Debug(ctx, fmt.Sprintf("Saving session with ID %s", key))
 	data, err := json.Marshal(session)
 	if err != nil {
 		return fmt.Errorf("failed to marshal session: %v", err)
@@ -59,6 +61,7 @@ func (s *sessionImpl) Save(ctx context.Context, session *model.Session) error {
 
 func (s *sessionImpl) Get(ctx context.Context, key string) (*model.Session, error) {
 	sessionID := s.getKey(key)
+	logger.Debug(ctx, fmt.Sprintf("Get session with ID %s", sessionID))
 	data, err := s.client.Get(ctx, sessionID)
 	if err != nil {
 		return nil, err
@@ -67,11 +70,13 @@ func (s *sessionImpl) Get(ctx context.Context, key string) (*model.Session, erro
 		return nil, nil
 	}
 
+	logger.Debug(ctx, fmt.Sprintf("Got session data %s", data))
 	var session model.Session
 	if err := json.Unmarshal([]byte(data), &session); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal session: %v", err)
 	}
 
+	logger.Debug(ctx, fmt.Sprintf("Get session id: %v, AuthenticationData: %v", session.ID, session.AuthenticationData))
 	return &session, nil
 }
 

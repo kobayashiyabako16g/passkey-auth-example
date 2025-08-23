@@ -132,7 +132,7 @@ func (a *auth) BeginLogin(ctx context.Context, dto dtos.BeginLoginRequest) (*dto
 		logger.Error(ctx, "user not found")
 		return nil, dtos.ErrUserNotFound
 	}
-	logger.Info(ctx, fmt.Sprintf("user credential: %v", user.Credentials[0]))
+	logger.Info(ctx, fmt.Sprintf("user credential: %v", len(user.Credentials)))
 
 	// webauthn
 	options, sessionData, err := a.webAuthn.BeginLogin(user)
@@ -156,7 +156,7 @@ func (a *auth) BeginLogin(ctx context.Context, dto dtos.BeginLoginRequest) (*dto
 	}
 
 	session.Username = dto.Username
-	session.RegistrationData = sessionData
+	session.AuthenticationData = sessionData
 
 	if err := a.sr.Save(ctx, session); err != nil {
 		logger.Error(ctx, "can't save session", logger.WithError(err))
@@ -178,7 +178,7 @@ func (a *auth) FinishLogin(ctx context.Context, dto dtos.FinishLoginRequest) err
 		return err
 	}
 	if session == nil || session.AuthenticationData == nil {
-		logger.Error(ctx, "session not found")
+		logger.Error(ctx, "usecase: session not found")
 		return dtos.ErrSessionNotFound
 	}
 
@@ -189,7 +189,7 @@ func (a *auth) FinishLogin(ctx context.Context, dto dtos.FinishLoginRequest) err
 		return err
 	}
 
-	_, err = a.webAuthn.FinishLogin(user, *session.RegistrationData, dto.Request)
+	_, err = a.webAuthn.FinishLogin(user, *session.AuthenticationData, dto.Request)
 	if err != nil {
 		logger.Error(ctx, "can't finish login", logger.WithError(err))
 		return err

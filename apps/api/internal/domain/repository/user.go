@@ -124,7 +124,7 @@ func (r *userRepository) FindByUsername(ctx context.Context, username string) (*
 		logger.Error(ctx, "Database Error", logger.WithError(err))
 		return nil, err
 	}
-	logger.Info(ctx, fmt.Sprintf("Exists username: %s", username))
+	logger.Info(ctx, fmt.Sprintf("Exists username: %s,  id: %v  ", username, user.ID))
 
 	// credentials table select
 	stmt, err = r.db.PrepareContext(ctx, "SELECT metadata FROM credentials WHERE user_id = $1")
@@ -141,13 +141,6 @@ func (r *userRepository) FindByUsername(ctx context.Context, username string) (*
 	}
 	defer rows.Close()
 
-	if !rows.Next() {
-		logger.Info(ctx, fmt.Sprintf("repo: No Exists credential: %s", username))
-		return &user, nil
-	}
-
-	logger.Info(ctx, "repo: Fetching credential")
-
 	var credentials []webauthn.Credential
 	for rows.Next() {
 		var metadata []byte
@@ -161,8 +154,6 @@ func (r *userRepository) FindByUsername(ctx context.Context, username string) (*
 			logger.Error(ctx, "JSON Unmarshal Error", logger.WithError(err))
 			continue // Skip this credential but continue with others
 		}
-
-		logger.Info(ctx, fmt.Sprintf("repo: Found credential: %s", credential.ID))
 
 		credentials = append(credentials, credential)
 	}

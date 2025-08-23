@@ -32,7 +32,6 @@ function SignUp() {
           </label>
           <input
             className="shadow appearance-none border rounded py-2 px-3 leading-tight"
-            id="username"
             type="text"
             placeholder="Username"
             maxLength={30}
