@@ -187,7 +187,12 @@ func (a *auth) FinishLogin(ctx context.Context, dto dtos.FinishLoginRequest) err
 		return dtos.ErrSessionNotFound
 	}
 
-	validatedUser, validatedCredential, err := a.webAuthn.FinishPasskeyLogin(a.loadUserPasskeyHandler, *session.AuthenticationData, dto.Request)
+	validatedUser, validatedCredential, err := a.webAuthn.FinishPasskeyLogin(
+		func(rawID []byte, userHandle []byte) (webauthn.User, error) {
+			user, err := a.ur.FindById(ctx, string(userHandle))
+			return user, err
+		},
+		*session.AuthenticationData, dto.Request)
 	if err != nil {
 		logger.Error(ctx, "can't finish login", logger.WithError(err))
 		return err
@@ -216,10 +221,4 @@ func (a *auth) FinishLogin(ctx context.Context, dto dtos.FinishLoginRequest) err
 	}
 
 	return nil
-}
-
-func (a *auth) loadUserPasskeyHandler(rawID []byte, userHandle []byte) (webauthn.User, error) {
-	ctx := context.Background()
-	user, err := a.ur.FindById(ctx, string(userHandle))
-	return user, err
 }
