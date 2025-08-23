@@ -1,6 +1,7 @@
 package model
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -69,8 +70,17 @@ func (u *User) WebAuthnCredentials() []webauthn.Credential {
 
 func (u *User) UpdateCredential(credential *webauthn.Credential) {
 	for i, c := range u.Credentials {
-		if string(c.ID) == string(credential.ID) {
+		if bytes.Equal(c.ID, credential.ID) {
 			u.Credentials[i] = *credential
 		}
 	}
+}
+
+func (u *User) ValidateCredential(credential *webauthn.Credential) error {
+	for _, c := range u.Credentials {
+		if bytes.Equal(c.ID, credential.ID) {
+			return nil
+		}
+	}
+	return fmt.Errorf("Credential not found")
 }

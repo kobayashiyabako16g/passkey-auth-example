@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/kobayashiyabako16g/passkey-auth-example/internal/domain/model"
 	"github.com/kobayashiyabako16g/passkey-auth-example/internal/domain/repository"
@@ -54,7 +55,11 @@ func (a *auth) BeginRegistration(ctx context.Context, dto dtos.BeginRegistration
 	user.DisplayName = dto.Username
 
 	// チャレンジ生成
-	options, sessionData, err := a.webAuthn.BeginRegistration(&user)
+	options, sessionData, err := a.webAuthn.BeginMediatedRegistration(&user,
+		protocol.MediationDefault,
+		webauthn.WithResidentKeyRequirement(protocol.ResidentKeyRequirementRequired),
+		webauthn.WithExclusions(webauthn.Credentials(user.WebAuthnCredentials()).CredentialDescriptors()),
+		webauthn.WithExtensions(map[string]any{"credProps": true}))
 	if err != nil {
 		logger.Error(ctx, "Error beginning registration", logger.WithError(err))
 		return nil, err
@@ -135,7 +140,8 @@ func (a *auth) BeginLogin(ctx context.Context, dto dtos.BeginLoginRequest) (*dto
 	logger.Info(ctx, fmt.Sprintf("user credential: %v", len(user.Credentials)))
 
 	// webauthn
-	options, sessionData, err := a.webAuthn.BeginLogin(user)
+	options, sessionData, err := a.webAuthn.BeginDiscoverableMediatedLogin(protocol.MediationDefault)
+	// options, sessionData, err := a.webAuthn.BeginLogin(user)
 	if err != nil {
 		logger.Error(ctx, "can't begin login", logger.WithError(err))
 		return nil, err
@@ -183,17 +189,31 @@ func (a *auth) FinishLogin(ctx context.Context, dto dtos.FinishLoginRequest) err
 	}
 
 	// user確認
-	user, err := a.ur.FindByUsername(ctx, session.Username)
-	if err != nil {
-		logger.Error(ctx, "can't find user", logger.WithError(err))
-		return err
-	}
+	// user, err := a.ur.FindByUsername(ctx, session.Username)
+	// if err != nil {
+	// 	logger.Error(ctx, "can't find user", logger.WithError(err))
+	// 	return err
+	// }
 
-	_, err = a.webAuthn.FinishLogin(user, *session.AuthenticationData, dto.Request)
+	// _, err = a.webAuthn.FinishLogin(user, *session.AuthenticationData, dto.Request)
+	validatedUser, validatedCredential, err := a.webAuthn.FinishPasskeyLogin(a.loadUserPasskeyHandler, *session.AuthenticationData, dto.Request)
 	if err != nil {
 		logger.Error(ctx, "can't finish login", logger.WithError(err))
 		return err
 	}
+
+	user, ok := validatedUser.(*model.User)
+	if !ok {
+		logger.Error(ctx, "can't convert validatedUser to User")
+		return dtos.ErrUserNotFound
+	}
+
+	err = user.ValidateCredential(validatedCredential)
+	if err != nil {
+		logger.Error(ctx, "can't update credential", logger.WithError(err))
+		return err
+	}
+	user.UpdateCredential(validatedCredential)
 
 	// success
 	session.Authenticated = true
@@ -205,4 +225,10 @@ func (a *auth) FinishLogin(ctx context.Context, dto dtos.FinishLoginRequest) err
 	}
 
 	return nil
+}
+
+func (a *auth) loadUserPasskeyHandler(rawID []byte, userHandle []byte) (webauthn.User, error) {
+	// Crude / Abstract example of retrieving the user for the rawID/userHandle value.
+	user, err := a.ur.FindById(context.Background(), string(rawID))
+	return user, err
 }

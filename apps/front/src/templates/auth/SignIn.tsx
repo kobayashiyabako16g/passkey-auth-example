@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { loginFinish, loginStart } from "@/api/auth";
 import { authenticatePasskey } from "./authn";
@@ -46,6 +47,12 @@ function SignIn() {
           >
             Sign In
           </button>
+          <Link
+            to="/auth/signup"
+            className="mt-3 text-indigo-500 inline-flex items-center"
+          >
+            Sign up
+          </Link>
         </div>
       </form>
     </div>
