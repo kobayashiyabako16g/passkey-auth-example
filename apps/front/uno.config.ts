@@ -1,9 +1,13 @@
+import presetWind4 from "@unocss/preset-wind4";
 import { defineConfig } from "unocss";
-import presetMini from "@unocss/preset-mini";
 
 export default defineConfig({
   presets: [
-    presetMini(),
+    presetWind4({
+      preflights: {
+        reset: true,
+      },
+    }),
     // ...other presets
   ],
 });
